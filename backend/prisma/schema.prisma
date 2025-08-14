@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  elementos Elemento[]
+  opciones  Opcion[]
+
+  @@map("categorias")
+}
+
+model Estado {
+  id        Int        @id @default(autoincrement())
+  nombre    String     @unique
+  elementos Elemento[]
+
+  @@map("estados")
+}
+
+model Elemento {
+  id            Int              @id @default(autoincrement())
+  nombre        String
+  descripcion   String?
+  categoriaId   Int
+  cantidad      Int              @default(0)
+  estadoId      Int
+  fechaRegistro DateTime         @default(now())
+  accesorio     Accesorio?
+  componente    Componente?
+  consumible    Consumible?
+  dispositivo   Dispositivo?
+  opciones      ElementoOpcion[]
+  categoria     Categoria        @relation(fields: [categoriaId], references: [id])
+  estado        Estado           @relation(fields: [estadoId], references: [id])
+  mantenimiento Mantenimiento[]
+  sinAsignar    SinAsignar[]
+  temporal      Temporal[]
+
+  @@index([categoriaId], map: "elementos_categoriaId_fkey")
+  @@index([estadoId], map: "elementos_estadoId_fkey")
+  @@map("elementos")
+}
+
+model Dispositivo {
+  id          Int      @id @default(autoincrement())
+  elementoId  Int      @unique
+  marca       String?
+  modelo      String?
+  numeroSerie String?
+  nip         String?
+  imei        String?
+  elemento    Elemento @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@map("dispositivos")
+}
+
+model Componente {
+  id               Int      @id @default(autoincrement())
+  elementoId       Int      @unique
+  tipoComponente   String?
+  especificaciones String?
+  elemento         Elemento @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@map("componentes")
+}
+
+model Accesorio {
+  id            Int      @id @default(autoincrement())
+  elementoId    Int      @unique
+  tipoAccesorio String?
+  descripcion   String?
+  elemento      Elemento @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@map("accesorios")
+}
+
+model Consumible {
+  id             Int      @id @default(autoincrement())
+  elementoId     Int      @unique
+  tipoConsumible String?
+  unidad         String?
+  elemento       Elemento @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@map("consumibles")
+}
+
+model SinAsignar {
+  id            Int      @id @default(autoincrement())
+  elementoId    Int
+  motivo        String?
+  fechaRegistro DateTime @default(now())
+  elemento      Elemento @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@index([elementoId], map: "sin_asignar_elementoId_fkey")
+  @@map("sin_asignar")
+}
+
+model Mantenimiento {
+  id                  Int       @id @default(autoincrement())
+  elementoId          Int
+  tipoMantenimiento   String?
+  descripcion         String?
+  fechaIngreso        DateTime
+  fechaEstimadaSalida DateTime?
+  elemento            Elemento  @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@index([elementoId], map: "mantenimiento_elementoId_fkey")
+  @@map("mantenimiento")
+}
+
+model Temporal {
+  id                      Int       @id @default(autoincrement())
+  elementoId              Int
+  asignadoA               String?
+  fechaEntrega            DateTime
+  fechaDevolucionEstimada DateTime?
+  usoJustificado          String?
+  elemento                Elemento  @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+
+  @@index([elementoId], map: "temporal_elementoId_fkey")
+  @@map("temporal")
+}
+
+model Opcion {
+  id          Int              @id @default(autoincrement())
+  nombre      String
+  categoriaId Int
+  elementos   ElementoOpcion[]
+  categoria   Categoria        @relation(fields: [categoriaId], references: [id])
+
+  @@index([categoriaId], map: "opciones_categoriaId_fkey")
+  @@map("opciones")
+}
+
+model ElementoOpcion {
+  id         Int      @id @default(autoincrement())
+  elementoId Int
+  opcionId   Int
+  elemento   Elemento @relation(fields: [elementoId], references: [id], onDelete: Cascade)
+  opcion     Opcion   @relation(fields: [opcionId], references: [id], onDelete: Cascade)
+
+  @@index([elementoId], map: "elemento_opciones_elementoId_fkey")
+  @@index([opcionId], map: "elemento_opciones_opcionId_fkey")
+  @@map("elemento_opciones")
+}
